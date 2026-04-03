@@ -182,7 +182,7 @@
         return;
       }
       document.getElementById('error').innerText = '';
-      const res  = await fetch('http://localhost:5001/api/rooms/create', {
+      const res  = await fetch('https://code-review-app-k8ys.onrender.com/api/rooms/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -198,7 +198,7 @@
         return;
       }
       document.getElementById('error').innerText = '';
-      const res  = await fetch(`http://localhost:5001/api/rooms/${roomId}`);
+      const res  = await fetch(`https://code-review-app-k8ys.onrender.com/api/rooms/${roomId}`);
       const data = await res.json();
       if (data.error) {
         document.getElementById('error').innerText = "room not found";

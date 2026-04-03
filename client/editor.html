@@ -311,7 +311,7 @@
     document.getElementById('roomIdDisplay').innerText   = roomId;
     document.getElementById('usernameDisplay').innerText = username;
 
-    const socket = io("http://localhost:5001");
+    const socket = io("https://code-review-app-k8ys.onrender.com");
     let editor;
 
     require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } });
@@ -368,7 +368,7 @@
       const input    = document.getElementById('input').value;
 
       try {
-        const res  = await fetch('http://localhost:5001/api/code/run', {
+        const res  = await fetch('https://code-review-app-k8ys.onrender.com/api/code/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code, language, input })
