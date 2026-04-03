@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Code Sync — Editor</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0e;
+      --surface: #161616;
+      --surface2: #1c1c1c;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --muted: #555;
+      --accent: #e8e8e8;
+      --error: #ff4d4d;
+      --success: #4dff91;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo span { color: var(--muted); }
+
+    .room-info {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .room-info strong { color: var(--text); }
+
+    .users-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.7rem;
+    }
+
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    #users-list {
+      display: flex;
+      gap: 0.5rem;
+      list-style: none;
+    }
+
+    #users-list li {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.65rem;
+      color: var(--text);
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 200px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .back-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .back-btn:hover { color: var(--text); border-color: #444; }
+
+    /* ── EDITOR AREA ── */
+    .editor-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #editor {
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── BOTTOM PANEL ── */
+    .bottom-panel {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      height: 220px;
+      flex-shrink: 0;
+    }
+
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .panel-tab {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      background: none;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+      width: auto;
+    }
+
+    .panel-tab.active { color: var(--text); }
+    .panel-tab:hover { color: var(--text); }
+
+    .run-btn {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      padding: 0.5rem 1.25rem;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      transition: background 0.2s;
+      width: auto;
+    }
+
+    .run-btn:hover { background: #ccc; }
+
+    .panel-content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    textarea#input {
+      width: 35%;
+      background: var(--bg);
+      border: none;
+      border-right: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      padding: 0.75rem 1rem;
+      resize: none;
+      outline: none;
+    }
+
+    textarea#input::placeholder { color: var(--muted); }
+
+    #output {
+      flex: 1;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      padding: 0.75rem 1rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .output-error { color: var(--error); }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo">code<span>/</span>sync</div>
+    <div class="room-info">
+      <span>room: <strong id="roomIdDisplay"></strong></span>
+      <span>you: <strong id="usernameDisplay"></strong></span>
+      <div class="users-pill">
+        <div class="dot"></div>
+        <ul id="users-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div>
+        <p class="sidebar-label">Language</p>
+        <select id="language">
+          <option value="javascript">JavaScript</option>
+          <option value="python">Python</option>
+        </select>
+      </div>
+      <button class="back-btn" onclick="window.location.href='index.html'">← leave room</button>
+    </div>
+
+    <!-- EDITOR + BOTTOM PANEL -->
+    <div class="editor-area">
+      <div id="editor"></div>
+
+      <div class="bottom-panel">
+        <div class="panel-tabs">
+          <button class="panel-tab active">stdin</button>
+          <button class="panel-tab active">output</button>
+          <button class="run-btn" id="runBtn">▶ Run</button>
+        </div>
+        <div class="panel-content">
+          <textarea id="input" placeholder="stdin input..."></textarea>
+          <pre id="output">// output will appear here</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  <script>
+    const params   = new URLSearchParams(window.location.search);
+    const username = params.get('username');
+    const roomId   = params.get('roomId');
+
+    if (!username || !roomId) window.location.href = 'index.html';
+
+    document.getElementById('roomIdDisplay').innerText   = roomId;
+    document.getElementById('usernameDisplay').innerText = username;
+
+    const socket = io("http://localhost:5001");
+    let editor;
+
+    require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } });
+    let isUpdating = false;
+
+    require(['vs/editor/editor.main'], function () {
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        value: "// Start coding...",
+        language: "javascript",
+        theme: "vs-dark",
+        fontSize: 14,
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        fontFamily: "'JetBrains Mono', monospace",
+        padding: { top: 16 }
+      });
+
+      socket.emit('join-room', { roomId, username });
+
+      document.getElementById('language').addEventListener('change', function () {
+        monaco.editor.setModelLanguage(editor.getModel(), this.value);
+      });
+
+      editor.onDidChangeModelContent(() => {
+        if (isUpdating) return;
+        const code = editor.getValue();
+        socket.emit('code-change', { roomId, code });
+      });
+    });
+
+    socket.on('code-update', (code) => {
+      if (!editor) return;
+      if (editor.getValue() !== code) {
+        isUpdating = true;
+        editor.setValue(code);
+        setTimeout(() => { isUpdating = false; }, 0);
+      }
+    });
+
+    socket.on('load-code', (code) => {
+      if (editor) editor.setValue(code);
+    });
+
+    document.getElementById("runBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const outputEl = document.getElementById('output');
+      outputEl.className = '';
+      outputEl.innerText = "running...";
+
+      const code     = editor.getValue();
+      const language = document.getElementById('language').value;
+      const input    = document.getElementById('input').value;
+
+      try {
+        const res  = await fetch('http://localhost:5001/api/code/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, language, input })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          outputEl.className = 'output-error';
+          outputEl.innerText = data.error;
+        } else {
+          outputEl.innerText = data.output || '(no output)';
+        }
+      } catch (err) {
+        outputEl.className = 'output-error';
+        outputEl.innerText = "fetch error: " + err.message;
+      }
+    });
+
+    socket.on('room-users', (users) => {
+      const ul = document.getElementById('users-list');
+      ul.innerHTML = "";
+      users.forEach(user => {
+        const li = document.createElement('li');
+        li.innerText = user;
+        ul.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>

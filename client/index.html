@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Code Sync</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0e;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --muted: #666;
+      --accent: #e8e8e8;
+      --accent-dim: #333;
+      --error: #ff4d4d;
+      --success: #4dff91;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      animation: fadeUp 0.5s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 0.25rem;
+    }
+
+    .logo span { color: var(--muted); }
+
+    .tagline {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+    }
+
+    input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      padding: 0.7rem 1rem;
+      margin-bottom: 0.75rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: #555; }
+    input::placeholder { color: var(--muted); }
+
+    button {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover { background: #ccc; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover { border-color: #555; background: var(--accent-dim); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1rem 0;
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    #error {
+      font-size: 0.75rem;
+      color: var(--error);
+      min-height: 1.2rem;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 2rem;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">code<span>/</span>sync</div>
+    <p class="tagline">Real-time collaborative editor</p>
+
+    <div class="card">
+      <p class="card-label">Your identity</p>
+      <input id="username" placeholder="username" />
+
+      <div class="divider">new room</div>
+      <button class="btn-primary" onclick="createRoom()">Create Room →</button>
+
+      <div class="divider">existing room</div>
+      <input id="roomId" placeholder="room id" />
+      <button class="btn-secondary" onclick="joinRoom()">Join Room</button>
+    </div>
+
+    <p id="error"></p>
+
+    <p class="footer">enter a username to get started</p>
+  </div>
+
+  <script>
+    async function createRoom() {
+      const username = document.getElementById('username').value.trim();
+      if (!username) {
+        document.getElementById('error').innerText = "username required";
+        return;
+      }
+      document.getElementById('error').innerText = '';
+      const res  = await fetch('http://localhost:5001/api/rooms/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      window.location.href = `editor.html?username=${username}&roomId=${data.id}`;
+    }
+
+    async function joinRoom() {
+      const username = document.getElementById('username').value.trim();
+      const roomId   = document.getElementById('roomId').value.trim();
+      if (!username || !roomId) {
+        document.getElementById('error').innerText = "username and room id required";
+        return;
+      }
+      document.getElementById('error').innerText = '';
+      const res  = await fetch(`http://localhost:5001/api/rooms/${roomId}`);
+      const data = await res.json();
+      if (data.error) {
+        document.getElementById('error').innerText = "room not found";
+        return;
+      }
+      window.location.href = `editor.html?username=${username}&roomId=${roomId}`;
+    }
+  </script>
+</body>
+</html>
